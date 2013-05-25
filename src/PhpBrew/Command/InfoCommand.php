@@ -5,13 +5,12 @@ use Exception;
 use PhpBrew\Config;
 use PhpBrew\PkgConfig;
 use PhpBrew\PhpSource;
-use PhpBrew\CommandBuilder;
 
 class InfoCommand extends \CLIFramework\Command
 {
     public function brief() { return 'show current php information'; }
 
-    public function usage() { 
+    public function usage() {
         return 'phpbrew info';
     }
 
@@ -49,19 +48,19 @@ class InfoCommand extends \CLIFramework\Command
 
 
         $this->header( 'Extensions' );
-        
+
         $extensions = get_loaded_extensions();
         $this->logger->info( join( ', ', $extensions ) );
 
         echo "\n";
 
         $this->header( 'Database Extensions' );
-        foreach( array_filter($extensions, function($n) { return 
+        foreach( array_filter($extensions, function($n) { return
             in_array($n,array(
                 'PDO',
-                'pdo_mysql', 
-                'pdo_pgsql', 
-                'pdo_sqlite', 
+                'pdo_mysql',
+                'pdo_pgsql',
+                'pdo_sqlite',
                 'pgsql',
                 'mysqli',
                 'mysql',

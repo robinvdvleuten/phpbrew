@@ -1,15 +1,15 @@
 <?php
+
 namespace PhpBrew;
+
 use Exception;
 use PhpBrew\Config;
-use PhpBrew\CommandBuilder;
 use PhpBrew\Utils;
 use PhpBrew\VariantBuilder;
+use Symfony\Component\Process\ProcessBuilder;
 
 class Builder
 {
-
-
     /**
      * @var CLIFramework\Logger logger object
      */
@@ -21,7 +21,6 @@ class Builder
      * @var string Version string
      */
     public $version;
-
 
     /**
      * @var string source code directory, path to extracted source directory
@@ -61,25 +60,25 @@ class Builder
         // build configure args
         // XXX: support variants
 
-        $cmd = new CommandBuilder('./configure');
+        $builder = ProcessBuilder::create(array('./configure'));
+        $builder->setEnv('CFLAGS', '-03');
 
-        putenv('CFLAGS=-O3');
         $prefix = $build->getInstallDirectory();
-        $args[] = "--prefix=" . $prefix;
-        $args[] = "--with-config-file-path={$prefix}/etc";
-        $args[] = "--with-config-file-scan-dir={$prefix}/var/db";
-        $args[] = "--with-pear={$prefix}/lib/php";
+        $builder
+            ->add("--prefix=" . $prefix)
+            ->add("--with-config-file-path={$prefix}/etc")
+            ->add("--with-config-file-scan-dir={$prefix}/var/db")
+            ->add("--with-pear={$prefix}/lib/php");
 
 
-        $variantOptions = $variantBuilder->build($build);
-        if( $variantOptions )
-            $args = array_merge( $args , $variantOptions );
-        
+        foreach ($variantBuilder->build($build) as $variantOption) {
+            $builder->add($variantOption);
+        }
+
         $this->logger->debug('Enabled variants: ' . join(', ',array_keys($build->getVariants())  ));
         $this->logger->debug('Disabled variants: ' . join(', ',array_keys($build->getDisabledVariants())  ));
 
-
-        if( $patchFile = $this->options->patch ) {
+        if ($patchFile = $this->options->patch) {
             // copy patch file to here
             $this->logger->info("===> Applying patch file from $patchFile ...");
             system("patch -p0 < $patchFile");
@@ -94,27 +93,38 @@ class Builder
             $apxs2Patch->patch($build);
         }
 
-        foreach( $extra as $a ) {
-            $args[] = $a;
+        foreach ($extra as $a) {
+            $builder->add($a);
         }
-
-        $cmd->args($args);
 
         $this->logger->info("===> Configuring {$build->version}...");
 
-        $cmd->append = false;
-        $cmd->stdout = Config::getVersionBuildLogPath( $build->name );
+        if ($stdout = Config::getVersionBuildLogPath($build->name)) {
+            // $builder->add("2&1 > $stdout");
 
-        echo "\n\n";
-        echo "Use tail command to see what's going on:\n";
-        echo "   $ tail -f {$cmd->stdout}\n\n\n";
+            echo "\n\n";
+            echo "Use tail command to see what's going on:\n";
+            echo "   $ tail -f {$stdout}\n\n\n";
+        }
 
-        $this->logger->debug( $cmd->getCommand() );
+        if ($nice = $this->options->nice) {
+            $builder->add("nice -n $nice");
+        }
 
-        if( $this->options->nice )
-            $cmd->nice( $this->options->nice );
+        $process = $builder->getProcess();
+        $this->logger->debug($process->getCommandLine());
 
-        $cmd->execute() !== false or die('Configure failed.');
+        $process->run(function ($type, $buffer) {
+            if ('err' === $type) {
+                echo 'ERR > '.$buffer;
+            } else {
+                echo 'OUT > '.$buffer;
+            }
+        });
+
+        if (!$process->isSuccessful()) {
+            throw new \RuntimeException($process->getErrorOutput());
+        }
 
         // Then patch Makefile for PHP 5.3.x on 64bit system.
         if( Utils::support_64bit() && $build->compareVersion('5.4') == -1 ) {
@@ -138,7 +148,4 @@ class Builder
     {
 
     }
-
 }
-
-

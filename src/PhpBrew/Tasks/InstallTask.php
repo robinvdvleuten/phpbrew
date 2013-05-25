@@ -1,7 +1,9 @@
 <?php
+
 namespace PhpBrew\Tasks;
-use PhpBrew\CommandBuilder;
+
 use PhpBrew\Config;
+use Symfony\Component\Process\ProcessBuilder;
 
 /**
  * Task to run `make install`
@@ -18,12 +20,27 @@ class InstallTask extends BaseTask
     public function install()
     {
         $this->info("Installing...");
-        $cmd = new CommandBuilder('make install');
-        $cmd->append = true;
-        if($this->logPath) {
-            $cmd->stdout = $this->logPath;
+
+        $builder = ProcessBuilder::create(array('make install'));
+
+        if ($this->logPath) {
+            // $builder->add('2>&1 >> ' .  $this->logPath);
         }
-        $cmd->execute() !== false or die('Install failed.');
+
+        $process = $builder->getProcess();
+        $this->debug($process->getCommandLine());
+
+        $process->run(function ($type, $buffer) {
+            if ('err' === $type) {
+                echo 'ERR > '.$buffer;
+            } else {
+                echo 'OUT > '.$buffer;
+            }
+        });
+
+        if (!$process->isSuccessful()) {
+            throw new \RuntimeException($process->getErrorOutput());
+        }
     }
 }
 

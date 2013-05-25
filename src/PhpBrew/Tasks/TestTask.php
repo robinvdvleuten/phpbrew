@@ -1,12 +1,14 @@
 <?php
+
 namespace PhpBrew\Tasks;
-use PhpBrew\CommandBuilder;
+
 use PhpBrew\Config;
+use Symfony\Component\Process\ProcessBuilder;
 
 /**
  * Task to run `make test`
  */
-class TestTask extends BaseTask 
+class TestTask extends BaseTask
 {
     public function setLogPath($path)
     {
@@ -16,15 +18,31 @@ class TestTask extends BaseTask
     public function test($nice = null)
     {
         $this->info("Testing...");
-        $cmd = new CommandBuilder('make test');
-        if($nice)
-            $cmd->nice($nice);
-        $cmd->append = true;
-        if($this->logPath) {
-            $cmd->stdout = $this->logPath;
+
+        $builder = ProcessBuilder::create('make test');
+
+        if ($this->logPath) {
+            // $builder->add('2>&1 >> ' .  $this->logPath);
         }
-        $this->debug( '' .  $cmd  );
-        $cmd->execute() !== false or die('Test failed.');
+
+        if ($nice) {
+            $builder->add("nice -n $nice");
+        }
+
+        $process = $builder->getProcess();
+        $this->debug($process->getCommandLine());
+
+        $process->run(function ($type, $buffer) {
+            if ('err' === $type) {
+                echo 'ERR > '.$buffer;
+            } else {
+                echo 'OUT > '.$buffer;
+            }
+        });
+
+        if (!$process->isSuccessful()) {
+            throw new \RuntimeException($process->getErrorOutput());
+        }
     }
 }
 

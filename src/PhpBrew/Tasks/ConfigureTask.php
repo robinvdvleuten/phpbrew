@@ -1,12 +1,14 @@
 <?php
+
 namespace PhpBrew\Tasks;
-use PhpBrew\CommandBuilder;
+
 use PhpBrew\Config;
+use Symfony\Component\Process\ProcessBuilder;
 
 /**
  * Task to run `make`
  */
-class BuildTask extends BaseTask 
+class BuildTask extends BaseTask
 {
 
     public $o;
@@ -27,27 +29,28 @@ class BuildTask extends BaseTask
         $root        = Config::getPhpbrewRoot();
         $buildPrefix = Config::getVersionBuildPrefix( $version );
 
-
-        if( ! file_exists('configure') ) {
+        if (!file_exists('configure')) {
             $this->debug("configure file not found, running buildconf script...");
             system('./buildconf') !== false or die('buildconf error');
         }
 
-        $cmd = new CommandBuilder('./configure');
+        $builder = ProcessBuilder::create(array('./configure'));
 
         // append cflags
-        if( $this->o ) {
+        if ($this->o) {
             $o = $this->o;
+
             $cflags = getenv('CFLAGS');
-            putenv("CFLAGS=$cflags -O$o");
+            $builder->setEnv('CFLAGS', "$cflags -O$o");
             $_ENV['CFLAGS'] = "$cflags -O$o";
         }
 
         $args = array();
-        $args[] = "--prefix=" . $buildPrefix;
-        $args[] = "--with-config-file-path={$buildPrefix}/etc";
-        $args[] = "--with-config-file-scan-dir={$buildPrefix}/var/db";
-        $args[] = "--with-pear={$buildPrefix}/lib/php";
+        $builder
+            ->add("--prefix=$buildPrefix")
+            ->add("--with-config-file-path={$buildPrefix}/etc")
+            ->add("--with-config-file-scan-dir={$buildPrefix}/var/db")
+            ->add("--with-pear={$buildPrefix}/lib/php");
 
     }
 }

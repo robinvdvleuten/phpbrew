@@ -4,7 +4,6 @@ use Exception;
 use PhpBrew\Config;
 use PhpBrew\PkgConfig;
 use PhpBrew\PhpSource;
-use PhpBrew\CommandBuilder;
 use PhpBrew\Builder;
 use PhpBrew\VariantParser;
 
@@ -25,7 +24,7 @@ class InstallCommand extends \CLIFramework\Command
 {
     public function brief() { return 'install php'; }
 
-    public function usage() 
+    public function usage()
     {
         return 'phpbrew install [php-version] ([+variant...])';
     }

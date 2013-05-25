@@ -4,7 +4,6 @@ use Exception;
 use PhpBrew\Config;
 use PhpBrew\Variants;
 use PhpBrew\PhpSource;
-use PhpBrew\CommandBuilder;
 use PhpBrew\Tasks\DownloadTask;
 use PhpBrew\Tasks\CleanTask;
 use PhpBrew\Tasks\PrepareDirectoryTask;
@@ -16,7 +15,7 @@ class DownloadCommand extends Command
 {
     public function brief() { return 'download php'; }
 
-    public function usage() 
+    public function usage()
     {
         return 'phpbrew download [php-version]';
     }

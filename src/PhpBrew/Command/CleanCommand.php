@@ -3,7 +3,6 @@ namespace PhpBrew\Command;
 use Exception;
 use PhpBrew\Config;
 use PhpBrew\PhpSource;
-use PhpBrew\CommandBuilder;
 use PhpBrew\Tasks\CleanTask;
 use PhpBrew\DirectorySwitch;
 
@@ -13,7 +12,7 @@ class CleanCommand extends Command
 {
     public function brief() { return 'clean up php distribution'; }
 
-    public function usage() 
+    public function usage()
     {
         return 'phpbrew clean [php-version]';
     }

@@ -2,7 +2,6 @@
 namespace PhpBrew\Tasks;
 use PhpBrew\Config;
 use PhpBrew\DirectorySwitch;
-use PhpBrew\CommandBuilder;
 
 /**
  * Task to run `make clean`
@@ -33,7 +32,7 @@ class CleanTask extends BaseTask
 
     /**
      *
-     * @param string $buildId a build ID is a version string that followed by 
+     * @param string $buildId a build ID is a version string that followed by
      * variants and options.
      */
     public function cleanByBuildId($buildId)
